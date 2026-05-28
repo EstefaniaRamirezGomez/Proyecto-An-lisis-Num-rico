@@ -21,12 +21,12 @@ function getMatrixInputs() {
     return { A, b, size };
 }
 
-function renderMatrixInput(size = 3) {
+function renderMatrixInput(size = 3, containerId = 'matrix-inputs') {
     let html = '<div class="card" style="max-height: 400px; overflow-y: auto;">';
     
     html += `
         <label>Tamaño de matriz (n×n)</label>
-        <select id="matrix-size" onchange="updateMatrixSize()">
+        <select id="matrix-size" onchange="updateMatrixSize('${containerId}')">
             <option value="2">2×2</option>
             <option value="3" selected>3×3</option>
             <option value="4">4×4</option>
@@ -64,10 +64,10 @@ function renderMatrixInput(size = 3) {
     return html;
 }
 
-function updateMatrixSize() {
+function updateMatrixSize(containerId = 'matrix-inputs') {
     const newSize = parseInt(document.getElementById('matrix-size').value);
-    const inputs = document.getElementById('matrix-inputs');
-    inputs.innerHTML = renderMatrixInput(newSize);
+    const inputs = document.getElementById(containerId);
+    if (inputs) inputs.innerHTML = renderMatrixInput(newSize, containerId);
 }
 
 // Radio Espectral
@@ -126,7 +126,7 @@ function renderJacobi() {
     </div>
 
     <div id="matrix-inputs">
-        ${renderMatrixInput(3)}
+        ${renderMatrixInput(3, 'matrix-inputs')}
     </div>
 
     <button onclick="runJacobi()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -229,7 +229,7 @@ function renderGaussSeidel() {
     </div>
 
     <div id="matrix-inputs-gs">
-        ${renderMatrixInput(3)}
+        ${renderMatrixInput(3, 'matrix-inputs-gs')}
     </div>
 
     <button onclick="runGaussSeidel()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -312,7 +312,7 @@ function renderSOR() {
     </div>
 
     <div id="matrix-inputs-sor">
-        ${renderMatrixInput(3)}
+        ${renderMatrixInput(3, 'matrix-inputs-sor')}
     </div>
 
     <button onclick="runSOR()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -396,7 +396,7 @@ function renderComparativaC2() {
     </div>
 
     <div id="matrix-inputs-comp">
-        ${renderMatrixInput(3)}
+        ${renderMatrixInput(3, 'matrix-inputs-comp')}
     </div>
 
     <button onclick="runComparativaC2()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">

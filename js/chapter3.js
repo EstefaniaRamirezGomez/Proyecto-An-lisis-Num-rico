@@ -15,11 +15,11 @@ function getInterpolationData() {
     return points;
 }
 
-function renderDataPointsInput(n = 5) {
+function renderDataPointsInput(n = 5, containerId = 'data-inputs') {
     let html = '<div class="card" style="max-height: 400px; overflow-y: auto;">';
     html += `
         <label>Número de puntos (máximo 10)</label>
-        <select id="data-points" onchange="updateDataPointsSize()">
+        <select id="data-points" onchange="updateDataPointsSize('${containerId}')">
     `;
     
     for (let i = 2; i <= 10; i++) {
@@ -42,34 +42,10 @@ function renderDataPointsInput(n = 5) {
     return html;
 }
 
-function updateDataPointsSize() {
+function updateDataPointsSize(containerId = 'data-inputs') {
     const newN = parseInt(document.getElementById('data-points').value);
-    const inputs = document.getElementById('data-inputs');
-    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
-}
-
-function updateDataPointsSize_Newton() {
-    const newN = parseInt(document.getElementById('data-points').value);
-    const inputs = document.getElementById('data-inputs-newton');
-    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
-}
-
-function updateDataPointsSize_Spline() {
-    const newN = parseInt(document.getElementById('data-points').value);
-    const inputs = document.getElementById('data-inputs-spline');
-    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
-}
-
-function updateDataPointsSize_Cubic() {
-    const newN = parseInt(document.getElementById('data-points').value);
-    const inputs = document.getElementById('data-inputs-cubic');
-    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
-}
-
-function updateDataPointsSize_Vandermonde() {
-    const newN = parseInt(document.getElementById('data-points').value);
-    const inputs = document.getElementById('data-inputs-vandermonde');
-    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
+    const inputs = document.getElementById(containerId);
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN, containerId);
 }
 
 function plotInterpolation(canvasId, points, evaluateFunc, label) {
@@ -136,7 +112,7 @@ function renderLagrange() {
     </div>
 
     <div id="data-inputs">
-        ${renderDataPointsInput(5)}
+        ${renderDataPointsInput(5, 'data-inputs')}
     </div>
 
     <button onclick="runLagrange()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -233,7 +209,7 @@ function renderNewtonInterpolante() {
     </div>
 
     <div id="data-inputs-newton">
-        ${renderDataPointsInput(5)}
+        ${renderDataPointsInput(5, 'data-inputs-newton')}
     </div>
 
     <button onclick="runNewtonInterpolante()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -340,7 +316,7 @@ function renderSplineLineal() {
     </div>
 
     <div id="data-inputs-spline">
-        ${renderDataPointsInput(5)}
+        ${renderDataPointsInput(5, 'data-inputs-spline')}
     </div>
 
     <button onclick="runSplineLineal()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -403,7 +379,7 @@ function renderSplineCubico() {
     </div>
 
     <div id="data-inputs-cubic">
-        ${renderDataPointsInput(5)}
+        ${renderDataPointsInput(5, 'data-inputs-cubic')}
     </div>
 
     <button onclick="runSplineCubico()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -513,7 +489,7 @@ function renderVandermonde() {
     </div>
 
     <div id="data-inputs-vandermonde">
-        ${renderDataPointsInput(5)}
+        ${renderDataPointsInput(5, 'data-inputs-vandermonde')}
     </div>
 
     <button onclick="runVandermonde()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
