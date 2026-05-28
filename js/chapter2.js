@@ -37,8 +37,8 @@ function renderMatrixInput(size = 3) {
         </select>
     `;
     
-    html += '<table style="width:100%; margin-top:10px;">';
-    html += '<tr><th colspan="' + (size + 1) + '">Matriz A</th><th>b</th></tr>';
+    html += '<table style="width:100%; margin-top:10px; table-layout: fixed;">';
+    html += '<tr><th colspan="' + size + '">Matriz A</th><th>b</th></tr>';
     
     for (let i = 0; i < size; i++) {
         html += '<tr>';
@@ -52,11 +52,11 @@ function renderMatrixInput(size = 3) {
             if (size === 3 && i === 2 && j === 1) defaultVal = -1;
             if (size === 3 && i === 2 && j === 2) defaultVal = 4;
             
-            html += `<td><input id="a-${i}-${j}" type="number" value="${defaultVal}" step="0.1" style="width:50px;"></td>`;
+            html += `<td style="padding: 4px;"><input id="a-${i}-${j}" type="number" value="${defaultVal}" step="0.1" style="width:100%; padding: 4px 8px; font-size: 12px; min-width: 50px;"></td>`;
         }
         
         let defaultB = i === 0 ? 9 : i === 1 ? 7 : 9;
-        html += `<td><input id="b-${i}" type="number" value="${defaultB}" step="0.1" style="width:50px;"></td>`;
+        html += `<td style="padding: 4px;"><input id="b-${i}" type="number" value="${defaultB}" step="0.1" style="width:100%; padding: 4px 8px; font-size: 12px; min-width: 50px;"></td>`;
         html += '</tr>';
     }
     
@@ -366,5 +366,121 @@ function runSOR() {
         rows.map(r => r[0]),
         rows.map(r => r[r.length - 1]),
         'Error SOR'
+    );
+}
+
+// ============================================
+// COMPARATIVA DE MÉTODOS CAPÍTULO 2
+// ============================================
+
+function renderComparativaC2() {
+    return `
+    <h1>Comparativa de Metodos
+        <button onclick="showHelp('Comparativa de Metodos', '<p>Ejecuta todos los metodos iterativos simultaneamente sobre el mismo sistema.</p><p>Compara la velocidad de convergencia de cada metodo.</p><p>Puedes visualizar cual es mas eficiente para tu sistema.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.9em; color: #667eea; font-weight: 600;">
+            [Info]
+        </button>
+    </h1>
+
+    <div class="card">
+        <label>Tolerancia</label>
+        <input id="tol-comp-c2" value="0.0001" type="number" step="0.00001">
+
+        <label>Factor de Relajación (ω) para SOR</label>
+        <input id="omega-comp-c2" value="1.2" type="number" step="0.1">
+
+        <button onclick="showHelp('Nota', '<p>Usa la misma matriz que el ultimo metodo ejecutado.</p><p>Si aun no has ejecutado ningun metodo, se usará la matriz por defecto 3x3.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.85em; color: #667eea; font-weight: 600;">
+            [Mas info]
+        </button>
+    </div>
+
+    <div id="matrix-inputs-comp">
+        ${renderMatrixInput(3)}
+    </div>
+
+    <button onclick="runComparativaC2()" style="margin-top: 10px; padding: 10px 20px; background: #6c63ff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Ejecutar Comparativa
+    </button>
+
+    <div id="comp-c2-results"></div>
+    `;
+}
+
+function runComparativaC2() {
+    const { A, b, size } = getMatrixInputs();
+    const tol = parseFloat(document.getElementById('tol-comp-c2').value);
+    const omega = parseFloat(document.getElementById('omega-comp-c2').value);
+    const maxIter = 50;
+
+    let resultados = {
+        jacobi: [],
+        gaussSeidel: [],
+        sor: []
+    };
+
+    // JACOBI
+    let x = new Array(size).fill(0);
+    for (let iter = 0; iter < maxIter; iter++) {
+        let xNew = new Array(size).fill(0);
+        for (let i = 0; i < size; i++) {
+            let sum = 0;
+            for (let j = 0; j < size; j++) {
+                if (i !== j) sum += A[i][j] * x[j];
+            }
+            xNew[i] = (b[i] - sum) / A[i][i];
+        }
+        let err = 0;
+        for (let i = 0; i < size; i++) err += Math.abs(xNew[i] - x[i]);
+        resultados.jacobi.push(err);
+        if (err < tol) break;
+        x = xNew;
+    }
+
+    // GAUSS-SEIDEL
+    x = new Array(size).fill(0);
+    for (let iter = 0; iter < maxIter; iter++) {
+        let xOld = [...x];
+        for (let i = 0; i < size; i++) {
+            let sum1 = 0, sum2 = 0;
+            for (let j = 0; j < i; j++) sum1 += A[i][j] * x[j];
+            for (let j = i + 1; j < size; j++) sum2 += A[i][j] * x[j];
+            x[i] = (b[i] - sum1 - sum2) / A[i][i];
+        }
+        let err = 0;
+        for (let i = 0; i < size; i++) err += Math.abs(x[i] - xOld[i]);
+        resultados.gaussSeidel.push(err);
+        if (err < tol) break;
+    }
+
+    // SOR
+    x = new Array(size).fill(0);
+    for (let iter = 0; iter < maxIter; iter++) {
+        let xOld = [...x];
+        for (let i = 0; i < size; i++) {
+            let sum1 = 0, sum2 = 0;
+            for (let j = 0; j < i; j++) sum1 += A[i][j] * x[j];
+            for (let j = i + 1; j < size; j++) sum2 += A[i][j] * x[j];
+            let xGS = (b[i] - sum1 - sum2) / A[i][i];
+            x[i] = x[i] + omega * (xGS - x[i]);
+        }
+        let err = 0;
+        for (let i = 0; i < size; i++) err += Math.abs(x[i] - xOld[i]);
+        resultados.sor.push(err);
+        if (err < tol) break;
+    }
+
+    const maxLen = Math.max(...Object.values(resultados).map(r => r.length));
+
+    let html = `<p><strong>Factor ω (SOR) = ${omega}</strong></p>`;
+    html += '<canvas id="chart-comp-c2"></canvas>';
+
+    document.getElementById('comp-c2-results').innerHTML = html;
+
+    renderMultiChart(
+        'chart-comp-c2',
+        Array.from({length: maxLen}, (_, i) => i),
+        resultados,
+        'Error - Comparativa de Métodos (Cap. 2)'
     );
 }

@@ -78,7 +78,7 @@ function runBiseccion() {
             err
         ]);
 
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
 
         if (safeEval(f, a) * fxm < 0) {
             b = xm;
@@ -88,7 +88,8 @@ function runBiseccion() {
 
         prev = xm;
     }
-      document.getElementById('results').innerHTML =
+    
+    document.getElementById('results').innerHTML =
         renderTable(rows, ['n', 'x', 'f(x)', 'Error']) +
         '<canvas id="chart"></canvas>';
 
@@ -127,10 +128,13 @@ function runReglaFalsa() {
 
     let a = parseFloat(document.getElementById('a').value);
     let b = parseFloat(document.getElementById('b').value);
+    const tol = parseFloat(document.getElementById('tol').value);
+    const iter = parseInt(document.getElementById('iter').value);
 
     let rows = [];
+    let prev = 0;
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < iter; i++) {
 
         let fa = safeEval(f, a);
         let fb = safeEval(f, b);
@@ -138,18 +142,32 @@ function runReglaFalsa() {
         let xm = b - (fb * (b - a)) / (fb - fa);
 
         let fxm = safeEval(f, xm);
+        
+        let err = i === 0 ? 0 : computeError('absoluto', xm, prev);
 
-           rows.push([i, xm, fxm]);
+        rows.push([i, xm, fxm, err]);
+
+        if (i > 0 && Math.abs(err) < tol) break;
 
         if (fa * fxm < 0) {
             b = xm;
         } else {
             a = xm;
         }
+        
+        prev = xm;
     }
 
     document.getElementById('results').innerHTML =
-        renderTable(rows, ['n', 'x', 'f(x)']);
+        renderTable(rows, ['n', 'x', 'f(x)', 'Error']) +
+        '<canvas id="chart"></canvas>';
+
+    renderChart(
+        'chart',
+        rows.map(r => r[0]),
+        rows.map(r => r[3]),
+        'Error'
+    );
 }
 
 function renderPuntoFijo() {
@@ -170,6 +188,12 @@ function renderPuntoFijo() {
         <label>x0</label>
         <input id="x0" value="1">
 
+        <label>Tolerancia</label>
+        <input id="tol-pf" value="0.0001">
+
+        <label>Iteraciones</label>
+        <input id="iter-pf" value="50">
+
         <button onclick="runPuntoFijo()">
             Ejecutar
         </button>
@@ -185,22 +209,40 @@ function runPuntoFijo() {
     const g = document.getElementById('gx').value;
 
     let x = parseFloat(document.getElementById('x0').value);
+    
+    const tol = parseFloat(document.getElementById('tol-pf').value);
+    const iter = parseInt(document.getElementById('iter-pf').value);
 
     let rows = [];
+    let prev = 0;
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < iter; i++) {
         let xn = safeEval(g, x);
+        
+        let err = i === 0 ? 0 : Math.abs(xn - prev);
 
         rows.push([
             i,
             xn,
-            Math.abs(xn - x)
+            err
         ]);
+        
+        if (i > 0 && Math.abs(err) < tol) break;
 
         x = xn;
+        prev = xn;
     }
-      document.getElementById('results').innerHTML =
-        renderTable(rows, ['n', 'x', 'Error']);
+    
+    document.getElementById('results').innerHTML =
+        renderTable(rows, ['n', 'x', 'Error']) +
+        '<canvas id="chart"></canvas>';
+
+    renderChart(
+        'chart',
+        rows.map(r => r[0]),
+        rows.map(r => r[2]),
+        'Error'
+    );
 }
 function renderNewton() {
 
@@ -226,27 +268,45 @@ function runNewton() {
     const f = document.getElementById('fx').value;
 
     let x = parseFloat(document.getElementById('x0').value);
+    
+    const tol = parseFloat(document.getElementById('tol').value);
+    const iter = parseInt(document.getElementById('iter').value);
 
     let rows = [];
+    let prev = 0;
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < iter; i++) {
 
         let fx = safeEval(f, x);
         let dfx = derivative(f, x);
 
         let xn = x - fx / dfx;
+        
+        let err = i === 0 ? 0 : computeError('absoluto', xn, prev);
 
         rows.push([
             i,
             xn,
-            safeEval(f, xn)
+            safeEval(f, xn),
+            err
         ]);
+        
+        if (i > 0 && Math.abs(err) < tol) break;
 
         x = xn;
+        prev = xn;
     }
 
     document.getElementById('results').innerHTML =
-        renderTable(rows, ['n', 'x', 'f(x)']);
+        renderTable(rows, ['n', 'x', 'f(x)', 'Error']) +
+        '<canvas id="chart"></canvas>';
+
+    renderChart(
+        'chart',
+        rows.map(r => r[0]),
+        rows.map(r => r[3]),
+        'Error'
+    );
 }
 
 function renderSecante() {
@@ -285,7 +345,17 @@ function runSecante() {
         let fx0 = safeEval(f, x0);
         let fx1 = safeEval(f, x1);
 
+        if (Math.abs(fx1 - fx0) < 1e-15) {
+            showToast('Denominador muy pequeño, no puede continuar');
+            break;
+        }
+
         let x2 = x1 - (fx1 * (x1 - x0)) / (fx1 - fx0);
+
+        if (!isFinite(x2)) {
+            showToast('Resultado no finito, revisar los valores iniciales');
+            break;
+        }
 
         let err = Math.abs(x2 - x1);
 
@@ -296,7 +366,7 @@ function runSecante() {
             err
         ]);
 
-        if (err < tol) break;
+        if (i > 0 && err < tol) break;
 
         x0 = x1;
         x1 = x2;
@@ -352,8 +422,18 @@ function runRaicesMultiples() {
         let fx = safeEval(f, x);
         let dfx = derivative(f, x);
 
+        if (Math.abs(dfx) < 1e-15) {
+            showToast('Derivada muy pequeña, no puede continuar');
+            break;
+        }
+
         // Newton modificado para raíces múltiples: xn = x - m * f(x) / f'(x)
         let xn = x - (m * fx) / dfx;
+
+        if (!isFinite(xn)) {
+            showToast('Resultado no finito, revisar los parámetros');
+            break;
+        }
 
         let err = i === 0 ? 0 : computeError('absoluto', xn, prev);
 
@@ -364,7 +444,7 @@ function runRaicesMultiples() {
             err
         ]);
 
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
 
         x = xn;
         prev = xn;
@@ -394,7 +474,7 @@ function renderComparativa() {
             style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.9em; color: #667eea; font-weight: 600;">
             [Info]
         </button>
-    </h1>'
+    </h1>
 
     <div class="card">
         <p style="font-size: 0.9em; color: #666;">
@@ -441,7 +521,7 @@ function runComparativa() {
         let fxm = safeEval(f, xm);
         let err = i === 0 ? 0 : computeError(errorType, xm, prev);
         resultados.biseccion.push(err);
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
         if (safeEval(f, a) * fxm < 0) b = xm;
         else a = xm;
         prev = xm;
@@ -457,7 +537,7 @@ function runComparativa() {
         let fxm = safeEval(f, xm);
         let err = i === 0 ? 0 : computeError(errorType, xm, prev);
         resultados.reglaFalsa.push(err);
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
         if (fa * fxm < 0) b = xm;
         else a = xm;
         prev = xm;
@@ -472,7 +552,7 @@ function runComparativa() {
         let xn = x - fx / dfx;
         let err = i === 0 ? 0 : computeError(errorType, xn, prev);
         resultados.newton.push(err);
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
         x = xn;
         prev = xn;
     }
@@ -486,7 +566,7 @@ function runComparativa() {
         let x2 = x1 - (fx1 * (x1 - x0)) / (fx1 - fx0);
         let err = i === 0 ? 0 : computeError(errorType, x2, prev);
         resultados.secante.push(err);
-        if (Math.abs(err) < tol) break;
+        if (i > 0 && Math.abs(err) < tol) break;
         x0 = x1;
         x1 = x2;
         prev = x2;

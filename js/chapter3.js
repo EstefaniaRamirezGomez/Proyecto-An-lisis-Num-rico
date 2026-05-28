@@ -45,7 +45,31 @@ function renderDataPointsInput(n = 5) {
 function updateDataPointsSize() {
     const newN = parseInt(document.getElementById('data-points').value);
     const inputs = document.getElementById('data-inputs');
-    inputs.innerHTML = renderDataPointsInput(newN);
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
+}
+
+function updateDataPointsSize_Newton() {
+    const newN = parseInt(document.getElementById('data-points').value);
+    const inputs = document.getElementById('data-inputs-newton');
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
+}
+
+function updateDataPointsSize_Spline() {
+    const newN = parseInt(document.getElementById('data-points').value);
+    const inputs = document.getElementById('data-inputs-spline');
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
+}
+
+function updateDataPointsSize_Cubic() {
+    const newN = parseInt(document.getElementById('data-points').value);
+    const inputs = document.getElementById('data-inputs-cubic');
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
+}
+
+function updateDataPointsSize_Vandermonde() {
+    const newN = parseInt(document.getElementById('data-points').value);
+    const inputs = document.getElementById('data-inputs-vandermonde');
+    if (inputs) inputs.innerHTML = renderDataPointsInput(newN);
 }
 
 function plotInterpolation(canvasId, points, evaluateFunc, label) {
@@ -137,6 +161,29 @@ function lagrangeEvaluate(points, x) {
     return y;
 }
 
+function generateLagrangePolynomial(points) {
+    let formula = `P(x) = `;
+    let terms = [];
+    
+    for (let i = 0; i < points.length; i++) {
+        let numerator = [];
+        let denominator = [];
+        
+        for (let j = 0; j < points.length; j++) {
+            if (i !== j) {
+                numerator.push(`(x - ${points[j].x.toFixed(2)})`);
+                denominator.push(`(${points[i].x.toFixed(2)} - ${points[j].x.toFixed(2)})`);
+            }
+        }
+        
+        let y_i = points[i].y.toFixed(4);
+        terms.push(`${y_i} · ${numerator.join(' · ')} / [${denominator.join(' · ')}]`);
+    }
+    
+    formula += terms.join(` + `);
+    return formula;
+}
+
 function runLagrange() {
     const points = getInterpolationData();
     
@@ -145,7 +192,19 @@ function runLagrange() {
         return;
     }
 
-    let html = `<h3>Polinomio de Lagrange (grado ${points.length - 1})</h3>`;
+    // Mostrar tabla de puntos
+    let html = `<h3>Puntos ingresados</h3>`;
+    let tableRows = points.map((p, i) => [i, p.x.toFixed(4), p.y.toFixed(4)]);
+    html += renderTable(tableRows, ['#', 'x', 'y']);
+
+    html += `<h3>Polinomio de Lagrange (grado ${points.length - 1})</h3>`;
+    
+    const polynomialFormula = generateLagrangePolynomial(points);
+    html += `<div class="card" style="background: #f0f4ff; border-left: 4px solid #6c63ff;">
+        <p><strong>Fórmula:</strong></p>
+        <p style="font-family: monospace; font-size: 0.85em; word-break: break-all;">${polynomialFormula}</p>
+    </div>`;
+    
     html += '<canvas id="lagrange-chart"></canvas>';
     
     document.getElementById('lagrange-results').innerHTML = html;
@@ -165,6 +224,13 @@ function renderNewtonInterpolante() {
             [Info]
         </button>
     </h1>
+
+    <div class="card">
+        <button onclick="showHelp('Como ingresar datos', '<p>Ingresa hasta 10 puntos (x, y).</p><p>Los puntos deben estar ordenados por x ascendente.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.85em; color: #667eea; font-weight: 600;">
+            [Como ingresar datos]
+        </button>
+    </div>
 
     <div id="data-inputs-newton">
         ${renderDataPointsInput(5)}
@@ -208,6 +274,21 @@ function newtonEvaluate(points, dd, x) {
     return result;
 }
 
+function generateNewtonPolynomial(points, dd) {
+    let formula = `P(x) = ${dd[0][0].toFixed(4)}`;
+    
+    for (let i = 1; i < points.length; i++) {
+        let coeff = dd[0][i].toFixed(6);
+        let factors = [];
+        for (let j = 0; j < i; j++) {
+            factors.push(`(x - ${points[j].x.toFixed(2)})`);
+        }
+        formula += ` + ${coeff} · ${factors.join(' · ')}`;
+    }
+    
+    return formula;
+}
+
 function runNewtonInterpolante() {
     const points = getInterpolationData();
     
@@ -218,7 +299,19 @@ function runNewtonInterpolante() {
 
     const dd = dividedDifferences(points);
     
-    let html = `<h3>Newton Interpolante (grado ${points.length - 1})</h3>`;
+    // Mostrar tabla de puntos
+    let html = `<h3>Puntos ingresados</h3>`;
+    let tableRows = points.map((p, i) => [i, p.x.toFixed(4), p.y.toFixed(4)]);
+    html += renderTable(tableRows, ['#', 'x', 'y']);
+    
+    html += `<h3>Newton Interpolante (grado ${points.length - 1})</h3>`;
+    
+    const polynomialFormula = generateNewtonPolynomial(points, dd);
+    html += `<div class="card" style="background: #f0f4ff; border-left: 4px solid #6c63ff;">
+        <p><strong>Fórmula:</strong></p>
+        <p style="font-family: monospace; font-size: 0.85em; word-break: break-all;">${polynomialFormula}</p>
+    </div>`;
+    
     html += '<canvas id="newton-chart"></canvas>';
     
     document.getElementById('newton-results').innerHTML = html;
@@ -238,6 +331,13 @@ function renderSplineLineal() {
             [Info]
         </button>
     </h1>
+
+    <div class="card">
+        <button onclick="showHelp('Como ingresar datos', '<p>Ingresa hasta 10 puntos (x, y).</p><p>Los puntos deben estar ordenados por x ascendente.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.85em; color: #667eea; font-weight: 600;">
+            [Como ingresar datos]
+        </button>
+    </div>
 
     <div id="data-inputs-spline">
         ${renderDataPointsInput(5)}
@@ -269,7 +369,12 @@ function runSplineLineal() {
         return;
     }
 
-    let html = `<h3>Spline Lineal</h3>`;
+    // Mostrar tabla de puntos
+    let html = `<h3>Puntos ingresados</h3>`;
+    let tableRows = points.map((p, i) => [i, p.x.toFixed(4), p.y.toFixed(4)]);
+    html += renderTable(tableRows, ['#', 'x', 'y']);
+
+    html += `<h3>Spline Lineal</h3>`;
     html += '<canvas id="spline-lineal-chart"></canvas>';
     
     document.getElementById('spline-lineal-results').innerHTML = html;
@@ -289,6 +394,13 @@ function renderSplineCubico() {
             [Info]
         </button>
     </h1>
+
+    <div class="card">
+        <button onclick="showHelp('Como ingresar datos', '<p>Ingresa hasta 10 puntos (x, y).</p><p>Los puntos deben estar ordenados por x ascendente.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.85em; color: #667eea; font-weight: 600;">
+            [Como ingresar datos]
+        </button>
+    </div>
 
     <div id="data-inputs-cubic">
         ${renderDataPointsInput(5)}
@@ -367,7 +479,12 @@ function runSplineCubico() {
 
     const coeff = computeSplineCoeff(points);
     
-    let html = `<h3>Spline Cúbico</h3>`;
+    // Mostrar tabla de puntos
+    let html = `<h3>Puntos ingresados</h3>`;
+    let tableRows = points.map((p, i) => [i, p.x.toFixed(4), p.y.toFixed(4)]);
+    html += renderTable(tableRows, ['#', 'x', 'y']);
+
+    html += `<h3>Spline Cúbico</h3>`;
     html += '<canvas id="spline-cubic-chart"></canvas>';
     
     document.getElementById('spline-cubic-results').innerHTML = html;
@@ -387,6 +504,13 @@ function renderVandermonde() {
             [Info]
         </button>
     </h1>
+
+    <div class="card">
+        <button onclick="showHelp('Como ingresar datos', '<p>Ingresa hasta 10 puntos (x, y).</p><p>Los puntos deben estar ordenados por x ascendente.</p>')" 
+            style="background: #f5f7fa; border: 2px solid #667eea; padding: 8px 12px; cursor: pointer; border-radius: 5px; font-size: 0.85em; color: #667eea; font-weight: 600;">
+            [Como ingresar datos]
+        </button>
+    </div>
 
     <div id="data-inputs-vandermonde">
         ${renderDataPointsInput(5)}
@@ -455,10 +579,22 @@ function runVandermonde() {
     
     let coeff = gaussianElimination(V, b);
     
-    let html = `<h3>Polinomio de grado ${n-1}</h3>`;
-    html += '<p><strong>Coeficientes:</strong> ';
+    // Mostrar tabla de puntos
+    let html = `<h3>Puntos ingresados</h3>`;
+    let tableRows = points.map((p, i) => [i, p.x.toFixed(4), p.y.toFixed(4)]);
+    html += renderTable(tableRows, ['#', 'x', 'y']);
+    
+    // Mostrar matriz de Vandermonde
+    html += `<h3>Matriz de Vandermonde</h3>`;
+    let matrixRows = V.map((row, i) => [...row.map(v => v.toFixed(6)), b[i].toFixed(4)]);
+    html += renderTable(matrixRows, [...Array.from({length: n}, (_, i) => `x^${n-1-i}`), 'y']);
+    
+    // Mostrar polinomio
+    html += `<h3>Polinomio de grado ${n-1}</h3>`;
+    html += '<p><strong>p(x) = </strong>';
     for (let i = 0; i < coeff.length; i++) {
-        html += `${coeff[i].toFixed(4)}x^${n-1-i}${i < coeff.length - 1 ? ' + ' : ''}`;
+        let sign = coeff[i] >= 0 && i > 0 ? ' + ' : '';
+        html += `${sign}${coeff[i].toFixed(6)}x<sup>${n-1-i}</sup>`;
     }
     html += '</p>';
     
